@@ -1,17 +1,27 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
 import 'package:wall_art/data/data.dart';
 import 'package:wall_art/model/categories_model.dart';
 import 'package:wall_art/model/photos_model.dart';
 import 'package:wall_art/views/category.dart';
 import 'package:wall_art/views/search.dart';
-
 import 'package:wall_art/widgets/widget.dart';
-import 'package:http/http.dart' as http;
 
+// ignore: must_be_immutable
 class Home extends StatefulWidget {
-  const Home({Key? key}) : super(key: key);
+  int page;
+  bool hasNext;
+  bool loading;
+
+  Home({
+    Key? key,
+    this.page = 1,
+    this.hasNext = true,
+    this.loading = false,
+  }) : super(key: key);
 
   @override
   State<Home> createState() => _HomeState();
@@ -20,16 +30,22 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   List<CategorieModel> categories = [];
   List<PhotosModel> photos = [];
+  final int perPage = 20;
 
   TextEditingController searchController = TextEditingController();
 
-  getTrendingWallpaper() async {
-    final url =
-        Uri.parse("https://api.pexels.com/v1/curated?per_page=15&page=1");
+  getTrendingWallpaper(page) async {
+    print(page);
+    final url = Uri.parse(
+        "https://api.pexels.com/v1/curated?per_page=$perPage&page=$page");
+    setState(() {
+      widget.loading = true;
+    });
     await http.get(url, headers: {"Authorization": apiKey}).then((value) {
       //print(value.body);
 
       Map<String, dynamic> jsonData = jsonDecode(value.body);
+
       jsonData["photos"].forEach((element) {
         //print(element);
         //  photosModel = PhotosModel();
@@ -38,13 +54,19 @@ class _HomeState extends State<Home> {
         //print(photosModel.toString()+ "  "+ photosModel.src.portrait);
       });
 
-      setState(() {});
+      setState(() {
+        widget.loading = false;
+        if (jsonData["photos"].length == 0) {
+          widget.hasNext = false;
+        }
+        widget.page = page + 1;
+      });
     });
   }
 
   @override
   void initState() {
-    getTrendingWallpaper();
+    getTrendingWallpaper(widget.page);
     categories = getCategories();
     super.initState();
   }
@@ -106,7 +128,16 @@ class _HomeState extends State<Home> {
                     }),
               ),
               const SizedBox(height: 16),
-              wallpapersList(wallpapers: photos, context: context)
+              wallpapersList(wallpapers: photos, context: context),
+              const SizedBox(height: 16),
+              widget.page == 1 || widget.loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ElevatedButton(
+                      onPressed: () {
+                        getTrendingWallpaper(widget.page);
+                      },
+                      child: const Text('View More'),
+                    ),
             ],
           )),
         ));

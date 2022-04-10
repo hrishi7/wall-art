@@ -59,8 +59,9 @@ Widget wallpapersList({required List<PhotosModel> wallpapers, context}) {
             }).toList(),
           )
         : SizedBox(
-            width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height / 2,
-            child: const Center(child: CircularProgressIndicator())),
+            // width: MediaQuery.of(context).size.width,
+            // height: MediaQuery.of(context).size.height / 2,
+            // child: const Center(child: CircularProgressIndicator())
+            ),
   );
 }
